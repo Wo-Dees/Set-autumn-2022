@@ -155,21 +155,40 @@ TEST(Set, Constructors) {
     EXPECT_TRUE(set_.Size() == 0);
 }
 
-//TEST(Set, Find) {
-//    Set<int> set;
-//
-//    set.Insert(0);
-//    set.Insert(1);
-//    set.Insert(2);
-//    set.Insert(3);
-//    set.Insert(5);
-//    set.Insert(4);
-//    set.Insert(6);
-//    set.Insert(7);
-//    set.Insert(8);
-//    set.Insert(9);
-//
-//    Set<int> set_0(set.Find(5), set.Find(9));
-//
-//    EXPECT_TRUE(set_0.Size() == 5);
-//}
+TEST(Set, Find) {
+    Set<int> set;
+
+    set.Insert(0);
+    set.Insert(1);
+    set.Insert(2);
+    set.Insert(3);
+    set.Insert(5);
+    set.Insert(4);
+    set.Insert(6);
+    set.Insert(7);
+    set.Insert(8);
+    set.Insert(9);
+
+    EXPECT_TRUE(*set.Find(5) == 5);
+    EXPECT_TRUE(*set.Find(0) == 0);
+    EXPECT_TRUE(set.Find(99) == Set<int>::Iterator(nullptr));
+}
+
+TEST(Set, FindAndConstruct) {
+    Set<int> set;
+
+    set.Insert(0);
+    set.Insert(1);
+    set.Insert(2);
+    set.Insert(3);
+    set.Insert(5);
+    set.Insert(4);
+    set.Insert(6);
+    set.Insert(7);
+    set.Insert(8);
+    set.Insert(9);
+
+    Set<int> set1(set.Find(0), set.Find(5));
+
+    EXPECT_TRUE(set1.Size() == 5);
+}

@@ -235,7 +235,7 @@ public:
     }
 
     Iterator Find(const T& element) {
-        return Iterator(Find(node_, element));
+        return Iterator(find(node_, element));
     }
 
     // Other operations
@@ -300,12 +300,14 @@ private:
         }
     } // Спуск до максимального элемента в данном поддереве
 
-    static Node* Find(Node* node, const T& element) {
-        if (node != nullptr) {
-            if (node->key_ < element) {
-                Find(node->left_, element);
+    static Node* find(Node* node, const T& element) {
+        if (node != nullptr and element == node->key_) {
+            return node;
+        } else if (node != nullptr and element != node->key_) {
+            if (element < node->key_) {
+                return find(node->left_, element);
             } else {
-                Find(node->right_, element);
+                return find(node->right_, element);
             }
         } else {
             return nullptr;
