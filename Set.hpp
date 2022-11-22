@@ -14,7 +14,11 @@ public:
 
     class Iterator {
     public:
-        explicit Iterator(Node* node) : node_(node) {}
+        void Print() {
+            std::cout << node_ << " ";
+        }
+
+        explicit Iterator(Node *node) : node_(node) {}
 
         void operator++() {
             if (node_ != nullptr) {
@@ -22,9 +26,12 @@ public:
                     node_ = Min(node_->right_);
                     return;
                 }
-                if (node_->up_ != nullptr and node_->up_->key_ > node_->key_) {
+                while (node_->up_ != nullptr) {
+                    if (node_->up_ != nullptr and node_->up_->key_ > node_->key_) {
+                        node_ = node_->up_;
+                        return;
+                    }
                     node_ = node_->up_;
-                    return;
                 }
                 node_ = nullptr;
             }
@@ -36,9 +43,12 @@ public:
                     node_ = Max(node_->left_);
                     return;
                 }
-                if (node_->up_ != nullptr and node_->up_->key_ < node_->key_) {
+                while (node_->up_ != nullptr) {
+                    if (node_->up_ != nullptr and node_->up_->key_ < node_->key_) {
+                        node_ = node_->up_;
+                        return;
+                    }
                     node_ = node_->up_;
-                    return;
                 }
                 node_ = nullptr;
             }
@@ -48,13 +58,21 @@ public:
             return node_->key_;
         }
 
+        bool operator==(Set<T>::Iterator iter) {
+            return node_ == iter.node_;
+        }
+
+        bool operator!=(Set<T>::Iterator iter) {
+            return node_ != iter.node_;
+        }
+
     private:
-        Node* node_{nullptr};
+        Node *node_{nullptr};
     };
 
     Set() = default;
 
-    Set(Set<T>::Iterator iter1,  Set<T>::Iterator iter2) {
+    Set(Set<T>::Iterator iter1, Set<T>::Iterator iter2) {
         for (auto iter = iter1; iter != iter2; ++iter) {
             Insert(*iter);
         }
@@ -83,6 +101,7 @@ public:
 
     Set<T> &operator=(const Set<T> &set) {
         GarbageCollect(node_);
+        node_ = nullptr;
         size_ = 0;
         for (auto iter = set.Begin(); iter != set.End(); ++iter) {
             Insert(*iter);
@@ -99,22 +118,22 @@ public:
 
     // iterators
 
-    Set<T>::Iterator Begin() {
+    Set<T>::Iterator Begin() const {
         if (node_ == nullptr) {
             return Iterator(nullptr);
         }
         return Iterator(Min(node_));
     }
 
-    Set<T>::Iterator End() {
+    Set<T>::Iterator End() const {
         return Iterator(nullptr);
     }
 
-    Set<T>::Iterator Rbegin() {
+    Set<T>::Iterator Rbegin() const {
         return Iterator(nullptr);
     }
 
-    Set<T>::Iterator Rend() {
+    Set<T>::Iterator Rend() const {
         if (node_ == nullptr) {
             return Iterator(nullptr);
         }
@@ -170,18 +189,21 @@ public:
                 if (node->left_->right_ != nullptr) {
                     node->left_->right_->up_ = nullptr;
                 }
-                if (node->right_->right_ != nullptr) {
-                    node->right_->right_->up_ = nullptr;
+                if (node->left_->left_ != nullptr) {
+                    node->left_->left_->up_ = nullptr;
                 }
                 Node *temp_node = Merge(node->left_->right_, node->left_->left_);
                 --size_;
                 delete node->left_;
                 node->left_ = temp_node;
+                if (temp_node != nullptr) {
+                    temp_node->up_ = node;
+                }
                 return;
             }
             if (node->right_ != nullptr && node->right_->key_ == element) {
-                if (node->left_->right_ != nullptr) {
-                    node->left_->right_->up_ = nullptr;
+                if (node->right_->left_ != nullptr) {
+                    node->right_->left_->up_ = nullptr;
                 }
                 if (node->right_->right_ != nullptr) {
                     node->right_->right_->up_ = nullptr;
@@ -190,6 +212,9 @@ public:
                 --size_;
                 delete node->right_;
                 node->right_ = temp_node;
+                if (temp_node != nullptr) {
+                    temp_node->up_ = node;
+                }
                 return;
             }
 
@@ -209,6 +234,10 @@ public:
         }
     }
 
+    Iterator Find(const T& element) {
+        return Iterator(Find(node_, element));
+    }
+
     // Other operations
 
     [[nodiscard]] size_t Size() const {
@@ -221,6 +250,7 @@ public:
 
     void Clear() {
         GarbageCollect(node_);
+        node_ = nullptr;
         size_ = 0;
     }
 
@@ -254,43 +284,35 @@ private:
         }
     } // DEBUG
 
-    static Node* Min(Node *node) {
+    static Node *Min(Node *node) {
         if (node->left_ != nullptr) {
-            LeftDescent(node->left_);
+            return Min(node->left_);
         } else {
             return node;
         }
     } // Спуск до минимального элемента в данном поддереве
 
-    static Node* Max(Node *node) {
+    static Node *Max(Node *node) {
         if (node->right_ != nullptr) {
-            LeftDescent(node->right_);
+            return Max(node->right_);
         } else {
             return node;
         }
     } // Спуск до максимального элемента в данном поддереве
 
+    static Node* Find(Node* node, const T& element) {
+        if (node != nullptr) {
+            if (node->key_ < element) {
+                Find(node->left_, element);
+            } else {
+                Find(node->right_, element);
+            }
+        } else {
+            return nullptr;
+        }
+    }
+
     static Node *Merge(Node *node1, Node *node2) {
-        //
-        //
-        //          node1                           node2
-        //          /    \                         /    \
-        //         /      \                       /      \
-        //   node1.l      node1.r            node2.l      node2.r
-        //
-        //          if node1->priprity_ > node2->priprity_
-        //
-        //          node1
-        //           /              /  node1.r   ;       node2              \
-        //          /              /                     /    \              \
-        //         /               \                    /      \             /
-        //   node1.l                \               node2.l      node2.r    /
-        //
-        //       /        node1  ;   merged \
-        //      /        /                   \
-        //      \       /                    /
-        //       \node1.l                   /
-        //
         if (node1 == nullptr || node2 == nullptr) {
             return node1 ? node1 : node2;
         }
@@ -345,7 +367,7 @@ private:
         }
     }
 
-    static void GarbageCollect(Node* node) {
+    static void GarbageCollect(Node *node) {
         if (node != nullptr) {
             GarbageCollect(node->left_);
             GarbageCollect(node->right_);
